@@ -1,7 +1,9 @@
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 7000;
-const db = require("./database/Mysql");
+const db = require("./database/Mysql"); //RealDb
+// const db = require('./database/MysqlLocal')
+// const realDb = require('./database/MysqlLocal')
 const cors = require("cors");
 const moment = require("moment");
 const bodyParser = require("body-parser");

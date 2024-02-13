@@ -11,9 +11,16 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const secretKey = "book_rook_tanachai";
 
+
+const options = {
+  origin: '*',
+  Credential: true
+}
+
+
 app.use(bodyParser.json());
 app.use(express.json());
-app.use(cors());
+app.use(cors(options));
 
 app.get("", (req, res) => {
   res.send("Hello world");

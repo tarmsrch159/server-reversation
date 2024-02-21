@@ -1,8 +1,8 @@
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 7000;
-const db = require("./database/Mysql"); //RealDb
-// const db = require('./database/MysqlLocal')
+// const db = require("./database/Mysql"); //RealDb
+const db = require('./database/MysqlLocal')
 // const realDb = require('./database/MysqlLocal')
 const cors = require("cors");
 const moment = require("moment");
@@ -40,41 +40,54 @@ app.get("", (req, res) => {
 });
 
 app.post("/register_admin", async (req, res) => {
-  const { username, password } = req.body;
-  const query = `INSERT INTO admin (username, password) VALUES (?, ?)`;
+  const { username, pwd, tel } = req.body;
+  const query = `INSERT INTO admin (username, password, tel) VALUES (?, ?, ?)`;
   //Hash the password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(pwd, 10);
+  const queryCheckUsername = 'SELECT * FROM admin WHERE username = ?';
 
-  db.query(query, [username, hashedPassword], (err, result) => {
-    if (err) {
-      res.status(500).json({ err: "Internal Server Error" });
+  db.query(queryCheckUsername, [username], (err, result) => {
+    if (err) throw err;
+
+    if (result.length > 0) {
+      res.status(500).json({ status: 'Username existed in database' })
+      return;
     } else {
-      res.status(201).json({ message: "User registered successfully" });
+      db.query(query, [username, hashedPassword, tel], (err, result) => {
+        if (err) {
+          res.status(500).json({ err: "Internal Server Error" });
+        } else {
+          res.status(201).json({ status: "ok" });
+        }
+      });
     }
-  });
+  })
+
+
+
 });
 
 app.post('/login_admin', async (req, res) => {
   const { username, password } = req.body
   const query = `SELECT * FROM admin WHERE username = ?`
   db.query(query, [username], async (err, result) => {
-    if(err){
+    if (err) {
       res.status(500).json({ error: 'Internal server' })
-    }else if(result.length > 0){
+    } else if (result.length > 0) {
       const admin = result[0];
 
       const passwordMatch = await bcrypt.compare(password, admin.password)
 
-      if(passwordMatch){
+      if (passwordMatch) {
 
         const token = jwt.sign({ adminId: admin.id }, secretKey, { expiresIn: '1h' })
         res.status(200).json({ token, result })
 
-      }else{
+      } else {
         res.status(401).json({ error: 'Invalid credentials' })
       }
 
-    }else{
+    } else {
       res.status(401).json({ error: 'User not Found' })
     }
   })
@@ -119,7 +132,7 @@ app.get('/count_using_room', (req, res) => {
   GROUP BY room_name;`
 
   db.query(query, (err, results) => {
-    if(err) throw err;
+    if (err) throw err;
 
     res.send(results)
   })
@@ -303,12 +316,15 @@ app.put('/updateBookRoomModal', (req, res) => {
 
   const queryUpdate = `UPDATE book_room SET room_name = ? , event = ?, name = ?, lastname = ?, tel = ?, department = ? WHERE id = ?`
   db.query(queryUpdate, [room_name, title, name, lastname, tel, department, event_id], (err, result) => {
-    if(err){
+    if (err) {
       res.json({ ERROR: err })
-    }else{
+    } else {
       res.status(200).json({ status: "OK" })
     }
   })
 })
+
+
+app.post("/")
 
 app.listen(PORT, () => console.log("Server is running on " + PORT));
